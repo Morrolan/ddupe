@@ -1,20 +1,22 @@
-//! ddupe - a simple CLI tool for finding and optionally deleting duplicate files.
+//! ddupe - CLI entrypoint.
 //!
-//! Duplicates are detected by hashing file contents (SHA-256), so files are
-//! considered duplicates if their *contents* match, regardless of filename
-//! or directory.
+//! This module handles:
+//! - CLI parsing (clap)
+//! - progress bars (indicatif)
+//! - coloured output (colored)
+//! - confirmation prompts and deletion
+//!
+//! Core logic for hashing and duplicate analysis lives in `lib.rs`.
 
 use clap::Parser;
 use colored::*;
+use ddupe::{analyse_duplicates, collect_files, format_bytes};
 use indicatif::{ProgressBar, ProgressStyle};
-use sha2::{Digest, Sha256};
 use std::{
-    collections::HashMap,
-    fs::{self, File},
-    io::{self, BufReader, Read, Write},
+    fs,
+    io::{self, Write},
     path::PathBuf,
 };
-use walkdir::WalkDir;
 
 /// Command-line arguments for the `ddupe` tool.
 #[derive(Parser)]
@@ -35,174 +37,6 @@ struct Args {
     /// Dry run: do not delete files, only show what *would* be removed
     #[arg(long)]
     dry_run: bool,
-}
-
-/// Hash a single file using SHA-256 and return the hex-encoded digest.
-///
-/// This reads the file in chunks to avoid loading large files entirely
-/// into memory.
-fn hash_file(path: &PathBuf) -> io::Result<String> {
-    let file = File::open(path)?;
-    let mut reader = BufReader::new(file);
-    let mut hasher = Sha256::new();
-
-    let mut buffer = [0u8; 8192];
-    loop {
-        let bytes_read = reader.read(&mut buffer)?;
-        if bytes_read == 0 {
-            // End of file
-            break;
-        }
-        hasher.update(&buffer[..bytes_read]);
-    }
-
-    Ok(format!("{:x}", hasher.finalize()))
-}
-
-/// Convert a byte count into a human-readable string (KB, MB, GB, etc.).
-fn format_bytes(bytes: u64) -> String {
-    const KB: f64 = 1024.0;
-    const MB: f64 = KB * 1024.0;
-    const GB: f64 = MB * 1024.0;
-
-    let b = bytes as f64;
-
-    if b >= GB {
-        format!("{:.2} GB", b / GB)
-    } else if b >= MB {
-        format!("{:.2} MB", b / MB)
-    } else if b >= KB {
-        format!("{:.2} KB", b / KB)
-    } else {
-        format!("{} B", bytes)
-    }
-}
-
-/// Recursively gather all files under the given root directory.
-///
-/// Returns a flat list of file paths. Directories are ignored.
-fn collect_files(root: &PathBuf) -> Vec<PathBuf> {
-    WalkDir::new(root)
-        .into_iter()
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.path().is_file())
-        .map(|entry| entry.path().to_path_buf())
-        .collect()
-}
-
-/// Build a mapping from `hash -> list of files` with a progress bar.
-///
-/// This function:
-/// - hashes all files
-/// - updates a progress bar as it goes
-/// - returns a `HashMap` where each key is a content hash and the value is
-///   a list of files that share that hash.
-fn build_hash_map(files: &[PathBuf]) -> HashMap<String, Vec<PathBuf>> {
-    let total_files = files.len() as u64;
-
-    let bar = ProgressBar::new(total_files);
-    bar.set_style(
-        ProgressStyle::with_template(
-            "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} files",
-        )
-        .unwrap()
-        .progress_chars("#>-"),
-    );
-
-    let mut map: HashMap<String, Vec<PathBuf>> = HashMap::new();
-
-    for path in files {
-        match hash_file(path) {
-            Ok(hash) => {
-                map.entry(hash).or_default().push(path.clone());
-            }
-            Err(e) => {
-                eprintln!(
-                    "{} {}: {}",
-                    "Error hashing".red().bold(),
-                    path.display().to_string().red(),
-                    e.to_string().red()
-                );
-            }
-        }
-
-        bar.inc(1);
-    }
-
-    bar.finish_with_message("Hashing complete");
-    map
-}
-
-/// Print duplicate groups, decide which files to keep/delete, and calculate savings.
-///
-/// Returns a tuple:
-/// - `Vec<PathBuf>`: list of duplicate files that could be safely removed
-/// - `u64`: total number of bytes that would be freed by removing them
-fn analyse_and_print_duplicates(
-    hash_map: HashMap<String, Vec<PathBuf>>,
-) -> (Vec<PathBuf>, u64) {
-    println!("\n{}", "Duplicate files found:".yellow().bold());
-
-    // Collect only groups that have more than one file (i.e. real duplicates)
-    let mut duplicate_groups: Vec<Vec<PathBuf>> = Vec::new();
-    for (_hash, files) in hash_map.into_iter() {
-        if files.len() > 1 {
-            duplicate_groups.push(files);
-        }
-    }
-
-    if duplicate_groups.is_empty() {
-        println!("{}", "No duplicates found 🎉".bright_green().bold());
-        return (Vec::new(), 0);
-    }
-
-    let mut group_index = 0usize;
-    let mut removable_files: Vec<PathBuf> = Vec::new();
-    let mut total_saving_bytes: u64 = 0;
-
-    for group in &duplicate_groups {
-        group_index += 1;
-
-        println!(
-            "\n{} {} {}",
-            "---".bright_yellow(),
-            "Duplicate Group".bright_yellow().bold(),
-            group_index.to_string().bright_yellow()
-        );
-
-        // For each group, we arbitrarily keep the first file and mark the rest as duplicates.
-        // You could change this strategy later (e.g. keep newest, keep in preferred folder, etc.).
-        for (i, f) in group.iter().enumerate() {
-            if i == 0 {
-                println!(
-                    "{} {}",
-                    "[KEEP]".green().bold(),
-                    f.display().to_string().cyan()
-                );
-            } else {
-                println!(
-                    "{} {}",
-                    "[DUPE]".red().bold(),
-                    f.display().to_string().cyan()
-                );
-
-                // Try to get the file size so we can estimate savings.
-                if let Ok(meta) = fs::metadata(f) {
-                    total_saving_bytes += meta.len();
-                    removable_files.push(f.clone());
-                }
-            }
-        }
-    }
-
-    println!(
-        "\n{} {} duplicate file(s) can be removed, freeing approximately {}.",
-        "Summary:".blue().bold(),
-        removable_files.len().to_string().bright_yellow(),
-        format_bytes(total_saving_bytes).bright_green().bold()
-    );
-
-    (removable_files, total_saving_bytes)
 }
 
 /// Ask the user whether they want to proceed with deletion.
@@ -237,17 +71,17 @@ fn ask_user_to_confirm() -> bool {
 /// Returns:
 /// - number of successfully deleted files
 /// - total number of bytes freed
-fn delete_files(paths: Vec<PathBuf>) -> (u64, u64) {
+fn delete_files(paths: &[PathBuf]) -> (u64, u64) {
     println!("{}", "Deleting duplicate files...".red().bold());
 
     let mut deleted_count = 0u64;
     let mut deleted_bytes = 0u64;
 
     for path in paths {
-        match fs::metadata(&path) {
+        match fs::metadata(path) {
             Ok(meta) => {
                 let size = meta.len();
-                match fs::remove_file(&path) {
+                match fs::remove_file(path) {
                     Ok(_) => {
                         deleted_count += 1;
                         deleted_bytes += size;
@@ -305,18 +139,77 @@ fn main() {
         return;
     }
 
-    // Step 2: Build a hash map of content hash -> list of files (with a progress bar).
-    let hash_map = build_hash_map(&files);
+    // Step 2: Build a hash map with a progress bar.
+    let total_files = files.len() as u64;
 
-    // Step 3: Print duplicate groups and calculate potential savings.
-    let (removable_files, _saving_bytes) = analyse_and_print_duplicates(hash_map);
+    let bar = ProgressBar::new(total_files);
+    bar.set_style(
+        ProgressStyle::with_template(
+            "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} files",
+        )
+        .unwrap()
+        .progress_chars("#>-"),
+    );
 
-    // If there are no files to remove, we're done.
-    if removable_files.is_empty() {
+    // Build the map manually so we can update the bar as we go, but delegate
+    // the actual hashing logic to the library.
+    let mut map = std::collections::HashMap::new();
+    for path in &files {
+        if let Ok(hash) = ddupe::hash_file(path) {
+            map.entry(hash).or_insert_with(Vec::new).push(path.clone());
+        }
+        bar.inc(1);
+    }
+
+    bar.finish_with_message("Hashing complete");
+
+    // Step 3: Analyse duplicates using library logic.
+    let analysis = analyse_duplicates(map);
+
+    println!("\n{}", "Duplicate files found:".yellow().bold());
+
+    if analysis.groups.is_empty() {
+        println!("{}", "No duplicates found 🎉".bright_green().bold());
         return;
     }
 
-    // If dry-run is enabled, we stop before any deletion.
+    // Print groups with KEEP/DUPE markers.
+    for (idx, group) in analysis.groups.iter().enumerate() {
+        println!(
+            "\n{} {} {}",
+            "---".bright_yellow(),
+            "Duplicate Group".bright_yellow().bold(),
+            (idx + 1).to_string().bright_yellow()
+        );
+
+        println!(
+            "{} {}",
+            "[KEEP]".green().bold(),
+            group.keep.display().to_string().cyan()
+        );
+
+        for dupe in &group.dupes {
+            println!(
+                "{} {}",
+                "[DUPE]".red().bold(),
+                dupe.display().to_string().cyan()
+            );
+        }
+    }
+
+    println!(
+        "\n{} {} duplicate file(s) can be removed, freeing approximately {}.",
+        "Summary:".blue().bold(),
+        analysis.total_dupes().to_string().bright_yellow(),
+        format_bytes(analysis.total_saving_bytes).bright_green().bold()
+    );
+
+    // If there are no files to remove (shouldn't happen if groups non-empty), we're done.
+    if analysis.removable_files.is_empty() {
+        return;
+    }
+
+    // Dry-run: show everything but do not delete.
     if args.dry_run {
         println!(
             "\n{} {}",
@@ -327,14 +220,14 @@ fn main() {
         return;
     }
 
-    // Step 4: Ask the user if they actually want to delete the duplicates.
+    // Ask the user if they actually want to delete the duplicates.
     if !ask_user_to_confirm() {
         println!("{}", "Aborted. No files were deleted.".yellow());
         return;
     }
 
-    // Step 5: Delete the duplicates and report the result.
-    let (deleted_count, deleted_bytes) = delete_files(removable_files);
+    // Delete the duplicates and report the result.
+    let (deleted_count, deleted_bytes) = delete_files(&analysis.removable_files);
 
     println!(
         "\n{} Deleted {} file(s), freeing approximately {}.",
@@ -347,101 +240,84 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{collections::HashSet, io::Write};
+    use assert_cmd::prelude::*;
+    use predicates::prelude::*;
+    use std::fs::File;
+    use std::io::Write;
+    use std::process::Command;
+    use tempfile::TempDir;
 
-    fn write_temp_file(dir: &tempfile::TempDir, name: &str, contents: &[u8]) -> PathBuf {
+    fn write_file(dir: &TempDir, name: &str, contents: &[u8]) -> PathBuf {
         let path = dir.path().join(name);
-        let mut file = File::create(&path).expect("create temp file");
-        file.write_all(contents).expect("write temp file");
+        let mut file = File::create(&path).unwrap();
+        file.write_all(contents).unwrap();
         path
     }
 
-    #[test]
-    fn format_bytes_formats_units() {
-        assert_eq!(format_bytes(500), "500 B");
-        assert_eq!(format_bytes(2048), "2.00 KB");
-        assert_eq!(format_bytes(1_048_576), "1.00 MB");
-        assert_eq!(format_bytes(1_073_741_824), "1.00 GB");
+    fn binary_path() -> PathBuf {
+        if let Some(path) = option_env!("CARGO_BIN_EXE_ddupe") {
+            PathBuf::from(path)
+        } else {
+            let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+            path.push("target/debug/ddupe");
+            path
+        }
     }
 
     #[test]
-    fn hash_file_produces_expected_digest() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = write_temp_file(&dir, "sample.txt", b"hello world");
-        let expected = format!("{:x}", Sha256::digest(b"hello world"));
+    fn delete_files_removes_and_counts_bytes() {
+        let dir = TempDir::new().unwrap();
+        let one = write_file(&dir, "one.txt", b"abc"); // 3 bytes
+        let two = write_file(&dir, "two.txt", b"1234"); // 4 bytes
 
-        let digest = hash_file(&path).unwrap();
-        assert_eq!(digest, expected);
+        let (count, bytes) = delete_files(&[one.clone(), two.clone()]);
+
+        assert_eq!(count, 2);
+        assert_eq!(bytes, 7);
+        assert!(!one.exists());
+        assert!(!two.exists());
     }
 
     #[test]
-    fn collect_files_returns_all_files() {
-        let dir = tempfile::tempdir().unwrap();
-        let file_a = write_temp_file(&dir, "a.txt", b"a");
-        let nested_dir = dir.path().join("nested");
-        fs::create_dir(&nested_dir).unwrap();
-        let nested_tempdir = tempfile::TempDir::new_in(&nested_dir).unwrap();
-        let file_b = write_temp_file(&nested_tempdir, "b.txt", b"b");
+    fn cli_reports_no_duplicates_for_unique_files() {
+        let dir = TempDir::new().unwrap();
+        let _ = write_file(&dir, "unique.txt", b"unique content");
 
-        let files = collect_files(&dir.path().to_path_buf());
-        let set: HashSet<PathBuf> = files.into_iter().collect();
-        let expected: HashSet<PathBuf> = HashSet::from([file_a, file_b]);
-
-        assert_eq!(set, expected);
+        Command::new(binary_path())
+            .env("NO_COLOR", "1")
+            .arg(dir.path())
+            .assert()
+            .success()
+            .stdout(predicate::str::contains("No duplicates found"));
     }
 
     #[test]
-    fn build_hash_map_groups_duplicates() {
-        let dir = tempfile::tempdir().unwrap();
-        let dup1 = write_temp_file(&dir, "dup1.txt", b"same");
-        let dup2 = write_temp_file(&dir, "dup2.txt", b"same");
-        let unique = write_temp_file(&dir, "unique.txt", b"different");
+    fn cli_dry_run_reports_duplicates_without_deleting() {
+        let dir = TempDir::new().unwrap();
+        let keep = write_file(&dir, "keep.txt", b"dupe");
+        let dupe = write_file(&dir, "dupe.txt", b"dupe");
 
-        let map = build_hash_map(&vec![dup1.clone(), dup2.clone(), unique.clone()]);
-        assert_eq!(map.len(), 2);
+        let output = Command::new(binary_path())
+            .env("NO_COLOR", "1")
+            .arg("--dry-run")
+            .arg(dir.path())
+            .output()
+            .unwrap();
 
-        let mut lengths: Vec<usize> = map.values().map(|v| v.len()).collect();
-        lengths.sort();
-        assert_eq!(lengths, vec![1, 2]);
+        assert!(output.status.success());
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(
+            stdout.contains("duplicate file(s) can be removed"),
+            "stdout was: {}",
+            stdout
+        );
+        assert!(
+            stdout.contains("Dry run:"),
+            "stdout was: {}",
+            stdout
+        );
 
-        let duplicates = map
-            .values()
-            .find(|v| v.len() == 2)
-            .expect("duplicate group missing");
-        let set: HashSet<PathBuf> = duplicates.iter().cloned().collect();
-        let expected = HashSet::from([dup1, dup2]);
-        assert_eq!(set, expected);
-
-        let unique_group = map
-            .values()
-            .find(|v| v.len() == 1)
-            .expect("unique group missing");
-        assert_eq!(unique_group[0], unique);
-    }
-
-    #[test]
-    fn analyse_and_print_duplicates_marks_removable() {
-        let dir = tempfile::tempdir().unwrap();
-        let keep = write_temp_file(&dir, "keep.txt", b"data");
-        let dupe = write_temp_file(&dir, "dupe.txt", b"data");
-
-        let mut map = HashMap::new();
-        map.insert("hash".to_string(), vec![keep.clone(), dupe.clone()]);
-
-        let (removable_files, saved_bytes) = analyse_and_print_duplicates(map);
-        assert_eq!(removable_files, vec![dupe]);
-        assert_eq!(saved_bytes, 4);
-    }
-
-    #[test]
-    fn delete_files_removes_files_and_reports_stats() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = write_temp_file(&dir, "to_delete.txt", b"bye");
-
-        let (deleted_count, deleted_bytes) = delete_files(vec![path.clone()]);
-
-        assert_eq!(deleted_count, 1);
-        assert_eq!(deleted_bytes, 3);
-        assert!(!path.exists());
+        assert!(keep.exists());
+        assert!(dupe.exists());
     }
 }
