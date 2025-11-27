@@ -1,0 +1,14 @@
+[package]
+name = "ddupe"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sha2 = "0.10"
+walkdir = "2.5"
+clap = { version = "4", features = ["derive"] }
+colored = "2"
+indicatif = "0.17"
+
+[dev-dependencies]
+tempfile = "3"

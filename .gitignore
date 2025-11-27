@@ -1,0 +1,96 @@
+# ============================================
+# Rust / Cargo
+# ============================================
+
+# Compiled output
+/target/
+
+# Debug and release artefacts
+debug/
+release/
+
+# Cargo package metadata
+**/*.rlib
+**/*.rmeta
+**/*.d
+**/*.so
+**/*.dll
+**/*.dylib
+**/*.exe
+**/*.pdb
+
+# Lockfile for libraries (optional, but keep this ignored if you're making a library)
+/Cargo.lock
+
+# ============================================
+# Logs / Runtime files
+# ============================================
+*.log
+
+# ============================================
+# IDE / Editor files
+# ============================================
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs (CLion/RustRover/IntelliJ)
+.idea/
+*.iml
+
+# Vim / Neovim
+*.swp
+*.swo
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# SublimeText
+*.sublime-workspace
+
+# ============================================
+# OS / Miscellaneous
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux / Unix
+*~
+.nfs*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ============================================
+# Backups / temp files
+# ============================================
+*.bak
+*.tmp
+*.temp
+*.orig
+
+# ============================================
+# Rust tools & build helpers
+# ============================================
+
+# Rustfmt backup files
+**/*.rs.bk
+
+# Coverage (e.g. tarpaulin, grcov, llvm-cov)
+coverage/
+*.profraw
+*.profdata
+
+# ============================================
+# Optional: ignore release binaries
+# (You can remove this if you want your .exe in git)
+# ============================================
+*.exe

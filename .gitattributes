@@ -1,0 +1,62 @@
+# ============================================
+# Default text handling
+# ============================================
+
+# Auto-detect text files and ensure they use LF in the repo
+* text=auto eol=lf
+
+# Rust source files
+*.rs text
+*.toml text
+*.md text
+*.yml text
+*.yaml text
+
+# Shell / batch scripts
+*.sh text eol=lf
+*.ps1 text
+*.bat text eol=crlf
+
+# ============================================
+# Lockfiles & config
+# ============================================
+
+# Cargo.lock is text, but diffs can be noisy – use a dedicated diff driver name
+Cargo.lock text diff=lock
+
+# Git config files
+.gitattributes text
+.gitignore text
+
+# ============================================
+# Binary files (no diff)
+# ============================================
+
+# Common image formats
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+
+# Archives / packages
+*.zip binary
+*.tar binary
+*.tar.gz binary
+*.tgz binary
+*.xz binary
+*.7z binary
+
+# Compiled binaries / libraries
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.rlib binary
+
+# ============================================
+# GitHub Linguist tweaks (optional)
+# ============================================
+
+# Force Linguist to treat .rs as Rust (usually automatic, but explicit is fine)
+*.rs linguist-language=Rust
