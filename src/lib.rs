@@ -179,7 +179,7 @@ mod tests {
     #[test]
     fn collect_files_recurses_and_ignores_directories() {
         let dir = TempDir::new().unwrap();
-        let _ = fs::create_dir(dir.path().join("nested")).unwrap();
+        fs::create_dir(dir.path().join("nested")).unwrap();
         let _a = write_file(&dir, "a.txt", b"a");
         let _b = write_file(&dir, "nested/b.txt", b"b");
 
