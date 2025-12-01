@@ -7,8 +7,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-release:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
@@ -16,6 +21,8 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Cache Cargo
         uses: actions/cache@v4
@@ -28,8 +35,38 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Build release binaries
-        run: cargo build --release
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Run tests
-        run: cargo test --all --all-features
+        run: cargo test --all --all-features --release --target ${{ matrix.target }}
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          out_dir="target/${{ matrix.target }}/release"
+          mkdir -p artifacts
+          cp "$out_dir/ddupe.exe" "artifacts/ddupe-${{ matrix.target }}.exe"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ddupe-${{ matrix.target }}
+          path: artifacts/ddupe-${{ matrix.target }}.exe
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
