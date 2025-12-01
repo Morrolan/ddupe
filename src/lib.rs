@@ -98,9 +98,7 @@ impl DuplicateAnalysis {
 /// Given a mapping from content-hash -> list of files, build a `DuplicateAnalysis`.
 ///
 /// Any hash that only has a single file is ignored (not a duplicate).
-pub fn analyse_duplicates(
-    hash_map: HashMap<String, Vec<PathBuf>>,
-) -> DuplicateAnalysis {
+pub fn analyse_duplicates(hash_map: HashMap<String, Vec<PathBuf>>) -> DuplicateAnalysis {
     let mut groups = Vec::new();
     let mut removable_files = Vec::new();
     let mut total_saving_bytes: u64 = 0;
@@ -213,7 +211,10 @@ mod tests {
         let unique = write_file(&dir, "unique.txt", b"zzz");
 
         let mut map = HashMap::new();
-        map.insert("dup".to_string(), vec![dupe_two.clone(), keep.clone(), dupe_one.clone()]);
+        map.insert(
+            "dup".to_string(),
+            vec![dupe_two.clone(), keep.clone(), dupe_one.clone()],
+        );
         map.insert("unique".to_string(), vec![unique.clone()]);
 
         let analysis = analyse_duplicates(map);
@@ -227,7 +228,10 @@ mod tests {
         assert_eq!(dupes, vec![dupe_one, dupe_two]);
         assert_eq!(analysis.total_dupes(), 2);
         assert_eq!(analysis.total_saving_bytes, 2);
-        assert!(analysis.removable_files.iter().any(|p| p.ends_with("b.txt")));
+        assert!(analysis
+            .removable_files
+            .iter()
+            .any(|p| p.ends_with("b.txt")));
     }
 
     #[test]

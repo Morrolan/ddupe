@@ -67,6 +67,7 @@ ddupe instead:
 - 🎨 **Colourised output for clarity**
 - 📊 **Progress bar while hashing**
 - 🧮 **Reports how much disk space can be freed**
+- 👟 **Interactive mode (`-i`) to accept/reject each duplicate**
 - 🔒 **Safe by default** – always asks before deleting
 - 🧪 **Dry-run mode** (`--dry-run`) to preview deletions
 - 💥 Optional Windows/Linux/macOS binaries (cross-compiled)
