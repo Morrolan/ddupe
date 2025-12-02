@@ -97,7 +97,10 @@ fn prompt_for_index(max: usize) -> usize {
         if trimmed.is_empty() {
             return 1;
         }
-        if let Ok(num) = trimmed.parse::<usize>() && num >= 1 && num <= max {
+        if let Ok(num) = trimmed.parse::<usize>()
+            && num >= 1
+            && num <= max
+        {
             return num;
         }
         eprintln!(
