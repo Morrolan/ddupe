@@ -228,10 +228,12 @@ mod tests {
         assert_eq!(dupes, vec![dupe_one, dupe_two]);
         assert_eq!(analysis.total_dupes(), 2);
         assert_eq!(analysis.total_saving_bytes, 2);
-        assert!(analysis
-            .removable_files
-            .iter()
-            .any(|p| p.ends_with("b.txt")));
+        assert!(
+            analysis
+                .removable_files
+                .iter()
+                .any(|p| p.ends_with("b.txt"))
+        );
     }
 
     #[test]
