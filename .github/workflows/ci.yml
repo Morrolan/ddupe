@@ -45,6 +45,7 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -71,11 +72,64 @@ jobs:
           tool: cargo-llvm-cov
 
       - name: Run coverage (llvm-cov)
-        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+        run: cargo llvm-cov --all-features --workspace --json --output-path coverage.json --lcov --output-path lcov.info
 
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@v3
+      - name: Publish coverage summary
+        run: |
+          python - <<'PY'
+          import json, math, os
+          data = json.load(open("coverage.json"))
+          pct = data["coverage"]["line"]
+          summary = f"Line coverage: {pct:.2f}%"
+          print(summary)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write(summary + "\n")
+          PY
+
+      - name: Generate coverage badge
+        run: |
+          python - <<'PY'
+          import json
+          data = json.load(open("coverage.json"))
+          pct = data["coverage"]["line"]
+          color = "#e74c3c"
+          if pct >= 90:
+              color = "#2ecc71"
+          elif pct >= 75:
+              color = "#f1c40f"
+          elif pct >= 60:
+              color = "#e67e22"
+          badge = f'''<svg xmlns="http://www.w3.org/2000/svg" width="160" height="28" role="img" aria-label="coverage: {pct:.1f}%">
+  <linearGradient id="s" x2="0" y2="100%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <mask id="m"><rect width="160" height="28" rx="4" fill="#fff"/></mask>
+  <g mask="url(#m)">
+    <rect width="80" height="28" fill="#555"/>
+    <rect x="80" width="80" height="28" fill="{color}"/>
+    <rect width="160" height="28" fill="url(#s)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="12">
+    <text x="40" y="18">coverage</text>
+    <text x="120" y="18">{pct:.1f}%</text>
+  </g>
+</svg>'''
+          import pathlib
+          out = pathlib.Path("docs") / "coverage-badge.svg"
+          out.write_text(badge)
+          print(f"Wrote {out} with {pct:.1f}%")
+          PY
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          files: lcov.info
-          flags: unittests
-          fail_ci_if_error: false
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
