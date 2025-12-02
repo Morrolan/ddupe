@@ -1,6 +1,7 @@
 # ddupe
 
 [![CI](https://github.com/Morrolan/ddupe/actions/workflows/ci.yml/badge.svg)](https://github.com/Morrolan/ddupe/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/Morrolan/ddupe/branch/master/graph/badge.svg)](https://codecov.io/gh/Morrolan/ddupe)
 [![Release](https://github.com/Morrolan/ddupe/actions/workflows/release.yml/badge.svg)](https://github.com/Morrolan/ddupe/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![Rust Version](https://img.shields.io/badge/rust-stable-orange.svg)
