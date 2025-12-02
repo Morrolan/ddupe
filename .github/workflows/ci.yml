@@ -79,9 +79,24 @@ jobs:
       - name: Publish coverage summary
         run: |
           python - <<'PY'
-          import json, math, os
-          data = json.load(open("coverage.json"))
-          pct = data["coverage"]["line"]
+          import json, os, sys
+
+          def extract_pct(path):
+              data = json.load(open(path))
+              if isinstance(data, dict):
+                  if "coverage" in data and "line" in data["coverage"]:
+                      return data["coverage"]["line"]
+                  if "data" in data and data["data"]:
+                      totals = data["data"][0].get("totals") or {}
+                      lines = totals.get("lines") or {}
+                      if "percent" in lines:
+                          return lines["percent"]
+              return None
+
+          pct = extract_pct("coverage.json")
+          if pct is None:
+              print("Could not find line coverage percentage in coverage.json", file=sys.stderr)
+              sys.exit(1)
           summary = f"Line coverage: {pct:.2f}%"
           print(summary)
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
@@ -91,9 +106,24 @@ jobs:
       - name: Generate coverage badge
         run: |
           python - <<'PY'
-          import json, textwrap, pathlib
-          data = json.load(open("coverage.json"))
-          pct = data["coverage"]["line"]
+          import json, textwrap, pathlib, sys
+
+          def extract_pct(path):
+              data = json.load(open(path))
+              if isinstance(data, dict):
+                  if "coverage" in data and "line" in data["coverage"]:
+                      return data["coverage"]["line"]
+                  if "data" in data and data["data"]:
+                      totals = data["data"][0].get("totals") or {}
+                      lines = totals.get("lines") or {}
+                      if "percent" in lines:
+                          return lines["percent"]
+              return None
+
+          pct = extract_pct("coverage.json")
+          if pct is None:
+              print("Could not find line coverage percentage in coverage.json", file=sys.stderr)
+              sys.exit(1)
           color = "#e74c3c"
           if pct >= 90:
               color = "#2ecc71"
