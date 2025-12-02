@@ -23,8 +23,8 @@ use std::{
 #[derive(Parser)]
 #[command(
     name = "ddupe",
-    author,
-    version,
+    author = "Morrolan",
+    version = "v1.0.0",
     about = "Find and optionally delete duplicate files based on content hashes.",
     long_about = "ddupe recursively scans a directory, hashes file contents using SHA-256,\n\
                   groups files with identical content, and can optionally delete duplicates,\n\

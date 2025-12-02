@@ -3,7 +3,7 @@
 [![CI](https://github.com/Morrolan/ddupe/actions/workflows/ci.yml/badge.svg)](https://github.com/Morrolan/ddupe/actions/workflows/ci.yml)
 ![Coverage](https://morrolan.github.io/ddupe/coverage-badge.svg)
 [![Release](https://github.com/Morrolan/ddupe/actions/workflows/release.yml/badge.svg)](https://github.com/Morrolan/ddupe/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](LICENSE)
 ![Rust Version](https://img.shields.io/badge/rust-stable-orange.svg)
 ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-blue.svg)
 
@@ -35,7 +35,7 @@ ddupe works recursively and will scan an entire directory tree.
 | **Key Features**    | Recursive scan · Colourised output · Progress bar · Dry-run mode        |
 | **Safety**          | Interactive confirmation step before deletion                           |
 | **Binary Releases** | Available for Linux/macOS/Windows (built via GitHub Actions)            |
-| **License**         | MIT                                                                     |
+| **License**         | LGPL-3.0-or-later                                                      |
 | **CI**              | rustfmt · clippy (warnings = errors) · unit + integration tests         |
 
 ## 🚀 Capabilities at a Glance
