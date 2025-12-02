@@ -1,12 +1,12 @@
 [package]
 name = "ddupe"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2024"
 description = "Fast, cross-platform CLI for finding and removing duplicate files by content hash."
 license = "LGPL-3.0-or-later"
 repository = "https://github.com/Morrolan/ddupe"
-readme = "README.md"
 homepage = "https://github.com/Morrolan/ddupe"
+readme = "README.md"
 documentation = "https://docs.rs/ddupe"
 keywords = ["duplicate", "files", "hash", "cli", "cleanup"]
 categories = ["command-line-utilities", "filesystem"]
