@@ -137,7 +137,7 @@ jobs:
           elif pct >= 60:
               color = "#e67e22"
           badge = textwrap.dedent(f"""\
-          <svg xmlns="http://www.w3.org/2000/svg" width="160" height="28" role="img" aria-label="coverage: {pct:.1f}%">
+          <svg xmlns="http://www.w3.org/2000/svg" width="120" height="20" role="img" aria-label="coverage: {pct:.1f}%">
             <linearGradient id="s" x2="0" y2="100%">
               <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
               <stop offset="1" stop-opacity=".1"/>
