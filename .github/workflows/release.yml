@@ -79,6 +79,6 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          files: artifacts/**/*.exe
+          files: artifacts/**/ddupe-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
