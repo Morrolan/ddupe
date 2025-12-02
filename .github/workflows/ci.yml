@@ -72,7 +72,9 @@ jobs:
           tool: cargo-llvm-cov
 
       - name: Run coverage (llvm-cov)
-        run: cargo llvm-cov --all-features --workspace --json --output-path coverage.json --lcov --output-path lcov.info
+        run: |
+          cargo llvm-cov --all-features --workspace --json --output-path coverage.json
+          cargo llvm-cov report --lcov --output-path lcov.info
 
       - name: Publish coverage summary
         run: |
