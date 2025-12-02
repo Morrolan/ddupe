@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ddupe Documentation</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #0b1223;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #22d3ee;
+      --accent-2: #a78bfa;
+      --code: #1e293b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, var(--bg), #0b1223 60%, #0f172a);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 32px 16px 64px;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid #1f2937;
+      border-radius: 18px;
+      padding: 28px 32px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    h1, h2, h3 { margin-top: 0; }
+    h1 {
+      font-size: 2.4rem;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    h1 span.badge {
+      background: rgba(34, 211, 238, 0.12);
+      color: var(--accent);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+    }
+    h2 {
+      margin-top: 32px;
+      border-bottom: 1px solid #1f2937;
+      padding-bottom: 8px;
+    }
+    p { color: var(--muted); }
+    code {
+      background: var(--code);
+      color: var(--accent);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    pre {
+      background: var(--code);
+      padding: 12px 14px;
+      border-radius: 10px;
+      overflow-x: auto;
+      border: 1px solid #1f2937;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-2); }
+    ul { color: var(--muted); }
+    .pill {
+      display: inline-flex;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(167, 139, 250, 0.14);
+      color: #cbd5ff;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      font-size: 0.9rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: #0f172a;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--muted);
+    }
+    .card h3 {
+      margin: 0 0 6px 0;
+      color: var(--text);
+      font-size: 1.05rem;
+    }
+    footer {
+      margin-top: 32px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>
+      ddupe
+      <span class="badge">CLI Docs</span>
+    </h1>
+    <p>ddupe is a fast, safe CLI for finding and cleaning duplicate files by hashing their contents (SHA-256). It scans recursively, shows a progress bar plus the current file being hashed, and can delete duplicates in bulk or interactively.</p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Install</h3>
+        <pre><code>git clone https://github.com/Morrolan/ddupe.git
+cd ddupe
+cargo build --release</code></pre>
+        <p>Binary: <code>target/release/ddupe</code> (or <code>.exe</code> on Windows).</p>
+      </div>
+      <div class="card">
+        <h3>Quick Scan</h3>
+        <pre><code>ddupe /path/to/scan</code></pre>
+        <p>Find duplicates, prompt once before deletion.</p>
+      </div>
+      <div class="card">
+        <h3>Dry Run</h3>
+        <pre><code>ddupe --dry-run /path/to/scan</code></pre>
+        <p>Preview duplicates without deleting.</p>
+      </div>
+      <div class="card">
+        <h3>Interactive</h3>
+        <pre><code>ddupe -i /path/to/scan</code></pre>
+        <p>See numbered files per group and choose which to keep.</p>
+      </div>
+    </div>
+
+    <h2>Features</h2>
+    <ul>
+      <li>Recursive scanning of directories</li>
+      <li>Content-based detection via SHA-256</li>
+      <li>Progress bar with current-file display</li>
+      <li>Interactive per-group selection, numbered choices</li>
+      <li>Dry-run safety mode and clear space-savings summary</li>
+    </ul>
+
+    <h2>Exit Codes</h2>
+    <ul>
+      <li><code>0</code> on success</li>
+      <li>Non-zero on errors (e.g., unreadable paths, deletion failures)</li>
+    </ul>
+
+    <h2>Tips</h2>
+    <ul>
+      <li>Set <code>NO_COLOR=1</code> to disable colour in CI logs.</li>
+      <li>Run <code>cargo fmt && cargo clippy && cargo test</code> before PRs to match CI.</li>
+    </ul>
+
+    <h2>Links</h2>
+    <ul>
+      <li><a href="https://github.com/Morrolan/ddupe">Source on GitHub</a></li>
+      <li><a href="https://github.com/Morrolan/ddupe/issues">Issue tracker</a></li>
+    </ul>
+
+    <footer>© ddupe. Built with Rust.</footer>
+  </main>
+</body>
+</html>
