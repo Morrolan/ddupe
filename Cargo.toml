@@ -1,6 +1,6 @@
 [package]
 name = "ddupe"
-version = "0.1.5"
+version = "1.0.0"
 edition = "2024"
 description = "Fast, cross-platform CLI for finding and removing duplicate files by content hash."
 license = "LGPL-3.0-or-later"
