@@ -51,6 +51,8 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
 
       - name: Cache Cargo
         uses: actions/cache@v4
@@ -63,15 +65,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin --locked --version 0.29.0
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
 
-      - name: Run coverage (tarpaulin)
-        run: cargo tarpaulin --all --all-features --timeout 120 --out Xml
+      - name: Run coverage (llvm-cov)
+        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v4
         with:
-          files: cobertura.xml
+          files: lcov.info
           flags: unittests
           fail_ci_if_error: false
