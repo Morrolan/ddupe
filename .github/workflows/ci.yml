@@ -63,11 +63,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
+      - name: Install tarpaulin
+        run: cargo install cargo-tarpaulin --locked --version 0.29.0
+
       - name: Run coverage (tarpaulin)
-        uses: actions-rs/tarpaulin@v0.1
-        with:
-          version: "0.30.0"
-          args: "--all --all-features --timeout 120 --out Xml"
+        run: cargo tarpaulin --all --all-features --timeout 120 --out Xml
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v4
