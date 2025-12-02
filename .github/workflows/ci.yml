@@ -89,7 +89,7 @@ jobs:
       - name: Generate coverage badge
         run: |
           python - <<'PY'
-          import json
+          import json, textwrap, pathlib
           data = json.load(open("coverage.json"))
           pct = data["coverage"]["line"]
           color = "#e74c3c"
@@ -99,23 +99,24 @@ jobs:
               color = "#f1c40f"
           elif pct >= 60:
               color = "#e67e22"
-          badge = f'''<svg xmlns="http://www.w3.org/2000/svg" width="160" height="28" role="img" aria-label="coverage: {pct:.1f}%">
-  <linearGradient id="s" x2="0" y2="100%">
-    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
-    <stop offset="1" stop-opacity=".1"/>
-  </linearGradient>
-  <mask id="m"><rect width="160" height="28" rx="4" fill="#fff"/></mask>
-  <g mask="url(#m)">
-    <rect width="80" height="28" fill="#555"/>
-    <rect x="80" width="80" height="28" fill="{color}"/>
-    <rect width="160" height="28" fill="url(#s)"/>
-  </g>
-  <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="12">
-    <text x="40" y="18">coverage</text>
-    <text x="120" y="18">{pct:.1f}%</text>
-  </g>
-</svg>'''
-          import pathlib
+          badge = textwrap.dedent(f"""\
+          <svg xmlns="http://www.w3.org/2000/svg" width="160" height="28" role="img" aria-label="coverage: {pct:.1f}%">
+            <linearGradient id="s" x2="0" y2="100%">
+              <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+              <stop offset="1" stop-opacity=".1"/>
+            </linearGradient>
+            <mask id="m"><rect width="160" height="28" rx="4" fill="#fff"/></mask>
+            <g mask="url(#m)">
+              <rect width="80" height="28" fill="#555"/>
+              <rect x="80" width="80" height="28" fill="{color}"/>
+              <rect width="160" height="28" fill="url(#s)"/>
+            </g>
+            <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="12">
+              <text x="40" y="18">coverage</text>
+              <text x="120" y="18">{pct:.1f}%</text>
+            </g>
+          </svg>
+          """)
           out = pathlib.Path("docs") / "coverage-badge.svg"
           out.write_text(badge)
           print(f"Wrote {out} with {pct:.1f}%")
