@@ -76,6 +76,7 @@ Desktop.ini
 *.tmp
 *.temp
 *.orig
+*.rmv
 
 # ============================================
 # Rust tools & build helpers
