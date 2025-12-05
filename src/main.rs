@@ -255,10 +255,10 @@ fn write_json_report(
     analysis: &ddupe::DuplicateAnalysis,
     interactive: bool,
 ) -> io::Result<()> {
-    if let Some(parent) = output_path.parent() {
-        if !parent.as_os_str().is_empty() {
-            fs::create_dir_all(parent)?;
-        }
+    if let Some(parent) = output_path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        fs::create_dir_all(parent)?;
     }
 
     let groups = analysis
@@ -281,8 +281,7 @@ fn write_json_report(
     };
 
     let mut file = std::fs::File::create(output_path)?;
-    serde_json::to_writer_pretty(&mut file, &report)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+    serde_json::to_writer_pretty(&mut file, &report).map_err(io::Error::other)
 }
 
 fn main() {
@@ -293,12 +292,8 @@ fn main() {
     let json_mode = args.json_output.is_some();
 
     println!(
-        "{}\n{}\n{}\n{}\n{}",
-        "ddupe — Duplicate File Cleaner".bold(),
-        "License: LGPL-3.0-or-later",
-        "Source: https://github.com/Morrolan/ddupe",
-        "Docs:   https://morrolan.github.io/ddupe",
-        "------------------------------------------------------------"
+        "{}\nLicense: LGPL-3.0-or-later\nSource: https://github.com/Morrolan/ddupe\nDocs:   https://morrolan.github.io/ddupe\n------------------------------------------------------------",
+        "ddupe — Duplicate File Cleaner".bold()
     );
 
     // Basic sanity check: ensure the directory exists.
