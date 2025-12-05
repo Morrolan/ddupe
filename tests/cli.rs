@@ -1,5 +1,7 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
+use serde_json::Value;
+use std::fs;
 use std::io::Write;
 use tempfile::TempDir;
 
@@ -151,4 +153,67 @@ fn empty_directory_reports_and_exits_cleanly() {
         .assert()
         .success()
         .stdout(predicate::str::contains("No files found"));
+}
+
+#[test]
+fn json_output_writes_report_without_deleting() {
+    let dir = TempDir::new().unwrap();
+    let keep = write_file(&dir, "keep.txt", b"dupe");
+    let dupe = write_file(&dir, "dupe.txt", b"dupe");
+    let json_path = dir.path().join("report.json");
+
+    let output = binary_cmd()
+        .env("NO_COLOR", "1")
+        .arg("--json-output")
+        .arg(&json_path)
+        .arg(dir.path())
+        .output()
+        .unwrap();
+
+    assert!(
+        output.status.success(),
+        "Expected success exit, got {:?}",
+        output.status
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("ddupe — Duplicate File Cleaner"),
+        "Expected header in stdout, got: {}",
+        stdout
+    );
+    assert!(
+        stdout.contains("JSON report written to:"),
+        "Expected JSON completion message, got: {}",
+        stdout
+    );
+    assert!(
+        !stdout.contains("[KEEP]") && !stdout.contains("[DUPE]"),
+        "Expected no KEEP/DUPE listing in JSON mode, got: {}",
+        stdout
+    );
+    assert!(
+        stdout.contains("Scanning:"),
+        "Expected progress/start output in JSON mode, got: {}",
+        stdout
+    );
+
+    assert!(keep.exists(), "Keep file should remain");
+    assert!(dupe.exists(), "Dupe should remain");
+
+    let contents = fs::read_to_string(&json_path).expect("JSON report should be readable");
+    let parsed: Value = serde_json::from_str(&contents).expect("JSON report should be valid JSON");
+
+    assert_eq!(parsed["removable_count"], Value::from(1));
+    assert_eq!(parsed["mode"], Value::from("json"));
+    assert!(
+        parsed["duplicate_groups"]
+            .as_array()
+            .expect("duplicate_groups should be an array")
+            .iter()
+            .any(|g| g["dupes"]
+                .as_array()
+                .map(|a| !a.is_empty())
+                .unwrap_or(false)),
+        "Expected at least one duplicate group with dupes"
+    );
 }

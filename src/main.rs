@@ -12,6 +12,7 @@ use clap::Parser;
 use colored::*;
 use ddupe::{analyse_duplicates, collect_files, format_bytes};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use serde::Serialize;
 use std::{
     fs,
     io::{self, Write},
@@ -42,6 +43,28 @@ struct Args {
     /// Interactive deletion: review each duplicate one by one
     #[arg(short = 'i', long = "interactive")]
     interactive: bool,
+
+    /// Write analysis to a JSON file (implies dry-run; never deletes)
+    #[arg(long = "json-output", value_name = "FILE")]
+    json_output: Option<PathBuf>,
+}
+
+/// Data structure for JSON output.
+#[derive(Serialize)]
+struct JsonGroup {
+    keep: String,
+    dupes: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct JsonReport {
+    roots: Vec<String>,
+    duplicate_groups: Vec<JsonGroup>,
+    removable_count: usize,
+    savings_bytes: u64,
+    dry_run: bool,
+    interactive: bool,
+    mode: &'static str,
 }
 
 /// Ask the user a yes/no question. Returns `true` for "y"/"yes" (case-insensitive).
@@ -225,10 +248,58 @@ fn delete_files_interactively(groups: &[ddupe::DuplicateGroup]) -> (u64, u64) {
     (deleted_count, deleted_bytes)
 }
 
+/// Write a JSON report to disk without deleting or prompting.
+fn write_json_report(
+    output_path: &Path,
+    roots: &[PathBuf],
+    analysis: &ddupe::DuplicateAnalysis,
+    interactive: bool,
+) -> io::Result<()> {
+    if let Some(parent) = output_path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+
+    let groups = analysis
+        .groups
+        .iter()
+        .map(|g| JsonGroup {
+            keep: g.keep.display().to_string(),
+            dupes: g.dupes.iter().map(|p| p.display().to_string()).collect(),
+        })
+        .collect();
+
+    let report = JsonReport {
+        roots: roots.iter().map(|r| r.display().to_string()).collect(),
+        duplicate_groups: groups,
+        removable_count: analysis.total_dupes(),
+        savings_bytes: analysis.total_saving_bytes,
+        dry_run: true,
+        interactive,
+        mode: "json",
+    };
+
+    let mut file = std::fs::File::create(output_path)?;
+    serde_json::to_writer_pretty(&mut file, &report)
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+}
+
 fn main() {
     // Parse command-line arguments using clap.
     let args = Args::parse();
     let root = args.path;
+    let roots = vec![root.clone()];
+    let json_mode = args.json_output.is_some();
+
+    println!(
+        "{}\n{}\n{}\n{}\n{}",
+        "ddupe — Duplicate File Cleaner".bold(),
+        "License: LGPL-3.0-or-later",
+        "Source: https://github.com/Morrolan/ddupe",
+        "Docs:   https://morrolan.github.io/ddupe",
+        "------------------------------------------------------------"
+    );
 
     // Basic sanity check: ensure the directory exists.
     if !root.exists() {
@@ -249,7 +320,9 @@ fn main() {
     // Step 1: Collect all files under the target directory.
     let files = collect_files(&root);
     if files.is_empty() {
-        println!("{}", "No files found.".yellow());
+        if !json_mode {
+            println!("{}", "No files found.".yellow());
+        }
         return;
     }
 
@@ -291,6 +364,25 @@ fn main() {
 
     // Step 3: Analyse duplicates using library logic.
     let analysis = analyse_duplicates(map);
+
+    if json_mode {
+        if let Some(output_path) = args.json_output.as_ref() {
+            if let Err(e) = write_json_report(output_path, &roots, &analysis, args.interactive) {
+                eprintln!(
+                    "{} {}",
+                    "Failed to write JSON report:".red().bold(),
+                    e.to_string().red()
+                );
+                std::process::exit(1);
+            }
+            println!(
+                "{} {}",
+                "JSON report written to:".blue().bold(),
+                output_path.display().to_string().cyan()
+            );
+        }
+        return;
+    }
 
     println!("\n{}", "Duplicate files found:".yellow().bold());
 

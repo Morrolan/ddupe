@@ -7,6 +7,7 @@
 //!
 //! The CLI, progress bars, colouring and user interaction live in `src/main.rs`.
 
+use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
@@ -69,7 +70,7 @@ pub fn format_bytes(bytes: u64) -> String {
 }
 
 /// A single duplicate group: one "keep" file and zero or more "dupe" files.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct DuplicateGroup {
     /// The file we keep in this group.
     pub keep: PathBuf,
@@ -78,7 +79,7 @@ pub struct DuplicateGroup {
 }
 
 /// Full analysis result of a scan.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct DuplicateAnalysis {
     /// All groups that contain at least one duplicate.
     pub groups: Vec<DuplicateGroup>,

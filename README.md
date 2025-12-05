@@ -71,6 +71,7 @@ ddupe instead:
 - 👟 **Interactive mode (`-i`) to accept/reject each duplicate**
 - 🔒 **Safe by default** – always asks before deleting
 - 🧪 **Dry-run mode** (`--dry-run`) to preview deletions
+- 🧾 **JSON report output** (`--json-output <file>`) that never deletes or prompts
 - 💥 Optional Windows/Linux/macOS binaries (cross-compiled)
 
 ---
@@ -83,3 +84,24 @@ ddupe instead:
 git clone https://github.com/yourname/ddupe.git
 cd ddupe
 cargo build --release
+# binary will be at target/release/ddupe
+```
+
+## 🧾 JSON report (no deletions)
+
+Export a structured report without deleting or prompting:
+
+```bash
+ddupe --json-output /path/to/report.json /path/to/scan
+```
+
+This behaves like a dry run: it never deletes files, produces no terminal output, and writes the analysis to the specified JSON file.
+It skips the KEEP/DUPE listing but still shows the header and progress.
+
+## 🛠️ Development
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+```

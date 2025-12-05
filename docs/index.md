@@ -31,6 +31,12 @@ Dry-run (preview without deleting):
 ddupe --dry-run /path/to/scan
 ```
 
+JSON report (write analysis to file, never delete):
+
+```bash
+ddupe --json-output /tmp/report.json /path/to/scan
+```
+
 Interactive deletion (choose which file to keep per duplicate group):
 
 ```bash
@@ -51,6 +57,7 @@ ddupe /path/to/scan
 - Progress bar plus current-file display during hashing
 - Interactive per-group selection with numbered choices
 - Dry-run safety mode
+- JSON report output for scripts/automation (never deletes; suppresses KEEP/DUPE listing)
 - Clear reporting of space savings
 
 ## Exit Codes
