@@ -132,6 +132,11 @@ cargo build --release</code></pre>
         <p>Preview duplicates without deleting.</p>
       </div>
       <div class="card">
+        <h3>JSON Report</h3>
+        <pre><code>ddupe --json-output /tmp/report.json /path/to/scan</code></pre>
+        <p>Write the analysis to JSON without deleting or prompting.</p>
+      </div>
+      <div class="card">
         <h3>Interactive</h3>
         <pre><code>ddupe -i /path/to/scan</code></pre>
         <p>See numbered files per group and choose which to keep.</p>
@@ -144,6 +149,7 @@ cargo build --release</code></pre>
       <li>Content-based detection via SHA-256</li>
       <li>Progress bar with current-file display</li>
       <li>Interactive per-group selection, numbered choices</li>
+      <li>JSON report output for automation (never deletes)</li>
       <li>Dry-run safety mode and clear space-savings summary</li>
     </ul>
 
