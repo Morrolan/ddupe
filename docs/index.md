@@ -37,6 +37,8 @@ JSON report (write analysis to file, never delete):
 ddupe --json-output /tmp/report.json /path/to/scan
 ```
 
+This behaves like a dry run: it never deletes files and writes the analysis to the specified JSON file. The JSON lists all files in each duplicate group without preselecting a “keep.”
+
 Interactive deletion (choose which file to keep per duplicate group):
 
 ```bash
@@ -55,7 +57,7 @@ ddupe /path/to/scan
 - Recursive scanning of directories
 - Content-based duplicate detection using SHA-256
 - Progress bar plus current-file display during hashing
-- Interactive per-group selection with numbered choices
+- Interactive per-group selection with numbered choices (or keep all)
 - Dry-run safety mode
 - JSON report output for scripts/automation (never deletes; suppresses KEEP/DUPE listing)
 - Clear reporting of space savings

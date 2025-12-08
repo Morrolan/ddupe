@@ -52,8 +52,7 @@ struct Args {
 /// Data structure for JSON output.
 #[derive(Serialize)]
 struct JsonGroup {
-    keep: String,
-    dupes: Vec<String>,
+    files: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -99,12 +98,13 @@ fn ask_user_to_confirm() -> bool {
     ask_yes_no(&prompt)
 }
 
-/// Prompt the user to select an index in the inclusive range [1, max].
-/// Empty input defaults to 1.
-fn prompt_for_index(max: usize) -> usize {
+/// Prompt the user to select an index in the inclusive range [1, max],
+/// or choose to keep all copies. Empty input defaults to 1.
+fn prompt_for_selection(max: usize) -> Option<usize> {
     loop {
         print!(
-            "{} ",
+            "{}\n{} ",
+            "Enter a number to keep that file or 'a' to keep all copies.".bright_red(),
             format!("Which file should be kept? Enter 1-{} (default 1):", max)
                 .bright_red()
                 .bold()
@@ -114,17 +114,20 @@ fn prompt_for_index(max: usize) -> usize {
         let mut input = String::new();
         if io::stdin().read_line(&mut input).is_err() {
             eprintln!("{}", "Failed to read input, defaulting to 1.".yellow());
-            return 1;
+            return Some(1);
         }
         let trimmed = input.trim();
         if trimmed.is_empty() {
-            return 1;
+            return Some(1);
+        }
+        if trimmed.eq_ignore_ascii_case("a") || trimmed.eq_ignore_ascii_case("all") {
+            return None;
         }
         if let Ok(num) = trimmed.parse::<usize>()
             && num >= 1
             && num <= max
         {
-            return num;
+            return Some(num);
         }
         eprintln!(
             "{}",
@@ -224,9 +227,23 @@ fn delete_files_interactively(groups: &[ddupe::DuplicateGroup]) -> (u64, u64) {
                 default_hint
             );
         }
+        println!(
+            "  [{}] {}",
+            "A".bright_yellow(),
+            "Keep all copies (skip deletion)".cyan()
+        );
 
-        let choice = prompt_for_index(candidates.len());
-        let keep_idx = choice - 1;
+        let selection = prompt_for_selection(candidates.len());
+        if selection.is_none() {
+            println!(
+                "{}",
+                "[KEEPING ALL] Chose to keep every file in this group."
+                    .green()
+                    .bold()
+            );
+            continue;
+        }
+        let keep_idx = selection.unwrap() - 1;
 
         println!(
             "{} {}",
@@ -265,8 +282,10 @@ fn write_json_report(
         .groups
         .iter()
         .map(|g| JsonGroup {
-            keep: g.keep.display().to_string(),
-            dupes: g.dupes.iter().map(|p| p.display().to_string()).collect(),
+            files: std::iter::once(&g.keep)
+                .chain(g.dupes.iter())
+                .map(|p| p.display().to_string())
+                .collect(),
         })
         .collect();
 

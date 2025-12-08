@@ -81,6 +81,26 @@ fn interactive_mode_prompts_and_respects_choices() {
 }
 
 #[test]
+fn interactive_mode_keep_all_skips_deletion() {
+    let dir = TempDir::new().unwrap();
+    let first = write_file(&dir, "01-first.txt", b"dupe");
+    let second = write_file(&dir, "02-second.txt", b"dupe");
+
+    binary_cmd()
+        .env("NO_COLOR", "1")
+        .arg("-i")
+        .arg(dir.path())
+        // Choose keep all via 'a'
+        .write_stdin("a\n")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("KEEPING ALL"));
+
+    assert!(first.exists(), "Expected first file to remain");
+    assert!(second.exists(), "Expected second file to remain");
+}
+
+#[test]
 fn confirmation_decline_skips_deletion() {
     let dir = TempDir::new().unwrap();
     let keep = write_file(&dir, "keep.txt", b"dupe");
@@ -210,10 +230,7 @@ fn json_output_writes_report_without_deleting() {
             .as_array()
             .expect("duplicate_groups should be an array")
             .iter()
-            .any(|g| g["dupes"]
-                .as_array()
-                .map(|a| !a.is_empty())
-                .unwrap_or(false)),
-        "Expected at least one duplicate group with dupes"
+            .any(|g| { g["files"].as_array().map(|a| a.len() >= 2).unwrap_or(false) }),
+        "Expected at least one duplicate group with 2+ files"
     );
 }

@@ -68,7 +68,7 @@ ddupe instead:
 - 🎨 **Colourised output for clarity**
 - 📊 **Progress bar while hashing**
 - 🧮 **Reports how much disk space can be freed**
-- 👟 **Interactive mode (`-i`) to accept/reject each duplicate**
+- 👟 **Interactive mode (`-i`) to accept/reject each duplicate (or keep all)**
 - 🔒 **Safe by default** – always asks before deleting
 - 🧪 **Dry-run mode** (`--dry-run`) to preview deletions
 - 🧾 **JSON report output** (`--json-output <file>`) that never deletes or prompts
@@ -95,7 +95,7 @@ Export a structured report without deleting or prompting:
 ddupe --json-output /path/to/report.json /path/to/scan
 ```
 
-This behaves like a dry run: it never deletes files, produces no terminal output, and writes the analysis to the specified JSON file.
+This behaves like a dry run: it never deletes files, produces no terminal output, and writes the analysis to the specified JSON file. In the JSON report, all files in a duplicate group are listed (no preselected “keep”).
 It skips the KEEP/DUPE listing but still shows the header and progress.
 
 ## 🛠️ Development
