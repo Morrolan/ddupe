@@ -113,7 +113,10 @@ fn prompt_for_selection(max: usize) -> Option<usize> {
 
         let mut input = String::new();
         if io::stdin().read_line(&mut input).is_err() {
-            eprintln!("{}", "Failed to read input, defaulting to A (keep all).".yellow());
+            eprintln!(
+                "{}",
+                "Failed to read input, defaulting to A (keep all).".yellow()
+            );
             return None;
         }
         let trimmed = input.trim();
