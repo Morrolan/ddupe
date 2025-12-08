@@ -25,7 +25,7 @@ use std::{
 #[command(
     name = "ddupe",
     author = "Morrolan",
-    version = "v1.0.0",
+    version = "v1.1.0",
     about = "Find and optionally delete duplicate files based on content hashes.",
     long_about = "ddupe recursively scans a directory, hashes file contents using SHA-256,\n\
                   groups files with identical content, and can optionally delete duplicates,\n\
@@ -113,12 +113,12 @@ fn prompt_for_selection(max: usize) -> Option<usize> {
 
         let mut input = String::new();
         if io::stdin().read_line(&mut input).is_err() {
-            eprintln!("{}", "Failed to read input, defaulting to 1.".yellow());
-            return Some(1);
+            eprintln!("{}", "Failed to read input, defaulting to A (keep all).".yellow());
+            return None;
         }
         let trimmed = input.trim();
         if trimmed.is_empty() {
-            return Some(1);
+            return None;
         }
         if trimmed.eq_ignore_ascii_case("a") || trimmed.eq_ignore_ascii_case("all") {
             return None;
